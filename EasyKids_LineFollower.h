@@ -3,14 +3,21 @@ Servo ESC;
 
 #define OUT_LINE 16
 int esc_speed = 1000;
+bool invertedLine = false;
 
-enum { HOME,
-       STARTING,
-       RUN } state = HOME;
+enum
+{
+  HOME,
+  STARTING,
+  RUN
+} state = HOME;
 
-enum { CENTER,
-       RIGHT,
-       LEFT } out_state = CENTER;
+enum
+{
+  CENTER,
+  RIGHT,
+  LEFT
+} out_state = CENTER;
 
 signed int error_actual = 0;
 signed int error_anterior = 0;
@@ -35,7 +42,10 @@ int sensor9 = 15;
 int sensor10 = 16;
 int sensor11 = A6;
 
-void lineFollowerSetup() {
+void lineFollowerSetup()
+{
+  Serial.begin(9600);
+
   pinMode(sensor1, INPUT);
   pinMode(sensor2, INPUT);
   pinMode(sensor3, INPUT);
@@ -56,32 +66,63 @@ void lineFollowerSetup() {
   pinMode(10, OUTPUT);
 
   pinMode(2, INPUT_PULLUP);
-  //motor L Stop
+  // motor L Stop
   digitalWrite(19, HIGH);
   digitalWrite(18, HIGH);
   analogWrite(3, 0);
-  //motor R Stop
+  // motor R Stop
   digitalWrite(17, HIGH);
   digitalWrite(10, HIGH);
   analogWrite(11, 0);
 }
 
-void escSetup()
+void blackLine()
 {
-  ESC.attach(9);                //Brushless attach
-  ESC.writeMicroseconds(1000);  //1000-2500 maxspeed for Brushless
-  delay(1000);
+  invertedLine = false;
 }
 
-void setESCSpeed(int speed) // Speed 1-100
+void whiteLine()
 {
-  esc_speed = map(speed, 0, 100, 1000, 2500);  //1000-2500 maxspeed for Brushless
+  invertedLine = true;
 }
 
-int checkSensor(int pin) {
-  if (analogRead(pin) > 550) {
+void edfSetup()
+{
+  ESC.attach(9);               // Brushless attach
+  ESC.writeMicroseconds(1000); // 1000-2500 maxspeed for Brushless
+  // esc_speed = map(speed, 0, 100, 1000, 2500);  //1000-2500 maxspeed for Brushless
+}
+
+void edfSpeed(int speed)
+{
+  ESC.writeMicroseconds(map(speed, 0, 100, 1000, 2500)); // 1000-2500 maxspeed for Brushless
+}
+
+void edfStop()
+{
+  ESC.writeMicroseconds(1000); // 1000-2500 maxspeed for Brushless
+}
+
+void waitForStart()
+{
+  while (!digitalRead(2))
+  {
+  }
+}
+
+int sw_Start()
+{
+  return digitalRead(2);
+}
+
+int checkSensor(int pin)
+{
+  if (analogRead(pin) > 550)
+  {
     return 1;
-  } else {
+  }
+  else
+  {
     return 0;
   }
 }
@@ -101,26 +142,46 @@ void readSensor()
     Serial.print(!(digitalRead(sensor9)));
     Serial.print(!(digitalRead(sensor10)));
     Serial.println(!(checkSensor(sensor11)));
-    delay(100);    
+    delay(100);
   }
 }
 
-signed int Read_error(void) {
+signed int Read_error(void)
+{
   int b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10;
   signed int error = 0;
-  b0 = !(digitalRead(sensor6));
-  b1 = !(digitalRead(sensor5));
-  b2 = !(digitalRead(sensor7));
-  b3 = !(digitalRead(sensor4));
-  b4 = !(digitalRead(sensor8));
-  b5 = !(digitalRead(sensor3));
-  b6 = !(digitalRead(sensor9));
-  b7 = !(digitalRead(sensor2));
-  b8 = !(digitalRead(sensor10));
-  b9 = !(checkSensor(sensor1));
-  b10 = !(checkSensor(sensor11));
 
-  if (b0 || b1 || b2 || b3 || b4 || b5 || b6 || b7 || b8 || b9 || b10) {
+  if (invertedLine)
+  {
+    b0 = digitalRead(sensor6);
+    b1 = digitalRead(sensor5);
+    b2 = digitalRead(sensor7);
+    b3 = digitalRead(sensor4);
+    b4 = digitalRead(sensor8);
+    b5 = digitalRead(sensor3);
+    b6 = digitalRead(sensor9);
+    b7 = digitalRead(sensor2);
+    b8 = digitalRead(sensor10);
+    b9 = checkSensor(sensor1);
+    b10 = checkSensor(sensor11);
+  }
+  else
+  {
+    b0 = !(digitalRead(sensor6));
+    b1 = !(digitalRead(sensor5));
+    b2 = !(digitalRead(sensor7));
+    b3 = !(digitalRead(sensor4));
+    b4 = !(digitalRead(sensor8));
+    b5 = !(digitalRead(sensor3));
+    b6 = !(digitalRead(sensor9));
+    b7 = !(digitalRead(sensor2));
+    b8 = !(digitalRead(sensor10));
+    b9 = !(checkSensor(sensor1));
+    b10 = !(checkSensor(sensor11));
+  }
+
+  if (b0 || b1 || b2 || b3 || b4 || b5 || b6 || b7 || b8 || b9 || b10)
+  {
 
     /*Negative left sensor*/
     error = (b1) ? (0 - 2) : error;
@@ -154,24 +215,33 @@ signed int Read_error(void) {
     out_state = ((error <= (0 - 5)) && (error >= (0 - 10))) ? RIGHT : out_state;
 
     return error;
-  } else {
+  }
+  else
+  {
     return OUT_LINE;
   }
 }
 
-///Function to set speed of right motor///
-void Motor_L(signed int speed) {
+/// Function to set speed of right motor///
+void Motor_L(signed int speed)
+{
   // Max speed = 250
-  if (!speed) {
+  if (!speed)
+  {
     analogWrite(3, 0);
-  } else {
+  }
+  else
+  {
     speed = (speed >= 250) ? 250 : speed;
 
-    if (speed >= 1) {
+    if (speed >= 1)
+    {
       analogWrite(3, speed);
       digitalWrite(18, HIGH);
       digitalWrite(19, LOW);
-    } else {
+    }
+    else
+    {
       speed *= (0 - 1);
       ////////////////////////
       speed = (speed >= 250) ? 250 : speed;
@@ -184,19 +254,26 @@ void Motor_L(signed int speed) {
   return;
 }
 
-///Function to set speed of left motor///
-void Motor_R(signed int speed) {
+/// Function to set speed of left motor///
+void Motor_R(signed int speed)
+{
   // Max speed = 250
-  if (!speed) {
+  if (!speed)
+  {
     analogWrite(11, 0);
-  } else {
+  }
+  else
+  {
     speed = (speed >= 250) ? 250 : speed;
 
-    if (speed >= 1) {
+    if (speed >= 1)
+    {
       analogWrite(11, speed);
       digitalWrite(10, HIGH);
       digitalWrite(17, LOW);
-    } else {
+    }
+    else
+    {
       speed *= (0 - 1);
       ////////////////////////
       speed = (speed >= 250) ? 250 : speed;
@@ -209,79 +286,55 @@ void Motor_R(signed int speed) {
   return;
 }
 
-void pidLineFollower(int MED_SPEED, int max_speed, int KP, int KD) {
+void pidLineFollower(int MED_SPEED, int max_speed, int KP, int KD)
+{
+  error_actual = Read_error();
 
-  if (state == HOME) {
-    Motor_R(0);
-    Motor_L(0);
-
-    if (digitalRead(2) == 1) {
-      ESC.writeMicroseconds(esc_speed);  //1000-2500 maxspeed for Brushless
-      delay(300);
-      state = STARTING;
+  if (error_actual == OUT_LINE)
+  {
+    switch (out_state)
+    {
+    case CENTER:
+      speed_1 = MED_SPEED;
+      speed_2 = MED_SPEED;
+      break;
+    case LEFT:
+      speed_1 = max_speed;
+      speed_2 = (0 - max_speed);
+      break;
+    case RIGHT:
+      speed_1 = (0 - max_speed);
+      speed_2 = max_speed;
+      break;
     }
   }
+  else
+  {
+    proportional = (KP * error_actual);
+    derivative = (KD * (error_actual - error_anterior));
 
-  else if (state == STARTING) {
-    digitalWrite(13, HIGH);
-    delay(300);
-    digitalWrite(13, LOW);
-    delay(300);
-    digitalWrite(13, HIGH);
-    delay(300);
-    state = RUN;
-  }
-
-  else if (state == RUN) {
-    error_actual = Read_error();
-
-    if (error_actual == OUT_LINE) {
-      switch (out_state) {
-        case CENTER:
-          speed_1 = MED_SPEED;
-          speed_2 = MED_SPEED;
-          break;
-        case LEFT:
-          speed_1 = max_speed;
-          speed_2 = (0 - max_speed);
-          break;
-        case RIGHT:
-          speed_1 = (0 - max_speed);
-          speed_2 = max_speed;
-          break;
-      }
-    } else {
-      proportional = (KP * error_actual);
-      derivative = (KD * (error_actual - error_anterior));
-
-      error_sum++;
-      if (error_sum > 350) {
-        error_anterior = error_actual;
-        error_sum = 0;
-        error += error_actual;
-      }
-      if (error_actual == 0) {
-        error = 0;
-      }
-      speed_1 = MED_SPEED + (proportional + derivative);
-      speed_2 = MED_SPEED - (proportional + derivative);
+    error_sum++;
+    if (error_sum > 350)
+    {
+      error_anterior = error_actual;
+      error_sum = 0;
+      error += error_actual;
     }
-    Motor_R(speed_2);
-    Motor_L(speed_1);
+    if (error_actual == 0)
+    {
+      error = 0;
+    }
+    speed_1 = MED_SPEED + (proportional + derivative);
+    speed_2 = MED_SPEED - (proportional + derivative);
   }
+  Motor_R(speed_2);
+  Motor_L(speed_1);
 }
 
-void lineFollowerTimer(int MED_SPEED, int max_speed, int KP, int KD, int timer) {
+void lineFollowerTimer(int MED_SPEED, int max_speed, int KP, int KD, int timer)
+{
   int timeSince = millis();
-  while (millis() - timeSince < timer) {
-    pidLineFollower(MED_SPEED, max_speed, KP, KD);
-  }
-  Motor_R(0);
-  Motor_L(0);
-}
-
-void lineFollowerCross(int MED_SPEED, int max_speed, int KP, int KD) {
-  while ((digitalRead(sensor1) && digitalRead(sensor2) && digitalRead(sensor3)) || (digitalRead(sensor9) && digitalRead(sensor10) && digitalRead(sensor11)))  // 3 Left Sensors OR 3 Right sensors
+  while (millis() - timeSince < timer)
   {
     pidLineFollower(MED_SPEED, max_speed, KP, KD);
   }
@@ -289,39 +342,107 @@ void lineFollowerCross(int MED_SPEED, int max_speed, int KP, int KD) {
   Motor_L(0);
 }
 
-void lineFollower90Left(int MED_SPEED, int max_speed, int KP, int KD) {
-  while (digitalRead(sensor1) && digitalRead(sensor2) && digitalRead(sensor3))  // 3 Left sensors
+void lineFollowerCross(int MED_SPEED, int max_speed, int KP, int KD)
+{
+  if (invertedLine)
   {
-    pidLineFollower(MED_SPEED, max_speed, KP, KD);
+    while ((!digitalRead(sensor1) || !digitalRead(sensor2) || !digitalRead(sensor10) || !digitalRead(sensor11)) && // 2 Outer left sensors AND 2 Outer right sensors
+          (!digitalRead(sensor2) || !digitalRead(sensor3) || !digitalRead(sensor9) || !digitalRead(sensor10))) // 2 Outer left sensors AND 2 Outer right sensors
+    {
+      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+    }
+  }
+  else
+  {
+    while ((digitalRead(sensor1) || digitalRead(sensor2) || digitalRead(sensor10) || digitalRead(sensor11)) && // 2 Outer left sensors AND 2 Outer right sensors
+          (digitalRead(sensor2) || digitalRead(sensor3) || digitalRead(sensor9) || digitalRead(sensor10))) // 2 Outer left sensors AND 2 Outer right sensors
+    {
+      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+    }
   }
   Motor_R(0);
   Motor_L(0);
 }
 
-void lineFollower90Right(int MED_SPEED, int max_speed, int KP, int KD) {
-  while (digitalRead(sensor9) && digitalRead(sensor10) && digitalRead(sensor11))  // 3 Right sensors
+void lineFollower90Left(int MED_SPEED, int max_speed, int KP, int KD)
+{
+  if (invertedLine)
   {
-    pidLineFollower(MED_SPEED, max_speed, KP, KD);
+    while (!digitalRead(sensor1) || !digitalRead(sensor2) || !digitalRead(sensor3) || !digitalRead(sensor4)) // 3 Left sensors
+    {
+      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+    }
+  }
+  else
+  {
+    while (digitalRead(sensor1) || digitalRead(sensor2) || digitalRead(sensor3) || digitalRead(sensor4)) // 3 Left sensors
+    {
+      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+    }
   }
   Motor_R(0);
   Motor_L(0);
 }
 
-void robotTurnLeft(int MED_SPEED) {
-  while (digitalRead(sensor1))  // Leftest sensor
+void lineFollower90Right(int MED_SPEED, int max_speed, int KP, int KD)
+{
+  if (invertedLine)
   {
-    Motor_R(MED_SPEED);
-    Motor_L(-MED_SPEED);
+    while (!digitalRead(sensor8) || !digitalRead(sensor9) || !digitalRead(sensor10) || !digitalRead(sensor11)) // 3 Right sensors
+    {
+      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+    }
+  }
+  else
+  {
+    while (digitalRead(sensor8) || digitalRead(sensor9) || digitalRead(sensor10) || digitalRead(sensor11)) // 3 Right sensors
+    {
+      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+    }
   }
   Motor_R(0);
   Motor_L(0);
 }
 
-void robotTurnRight(int MED_SPEED) {
-  while (digitalRead(sensor11))  // Rightest sensor
+void robotTurnLeft(int MED_SPEED)
+{
+  if (invertedLine)
   {
-    Motor_R(-MED_SPEED);
-    Motor_L(MED_SPEED);
+    while (!digitalRead(sensor1) && !digitalRead(sensor2)) // Leftest sensor
+    {
+      Motor_R(MED_SPEED);
+      Motor_L(-MED_SPEED);
+    }
+  }
+  else
+  {
+    while (digitalRead(sensor1) && digitalRead(sensor1)) // Leftest sensor
+    {
+      Motor_R(MED_SPEED);
+      Motor_L(-MED_SPEED);
+    }
+  }
+  Motor_R(0);
+  Motor_L(0);
+}
+
+void robotTurnRight(int MED_SPEED)
+{
+  if (invertedLine)
+  {
+    while (!digitalRead(sensor10) && !digitalRead(sensor11)) // Rightest sensor
+    {
+      Motor_R(-MED_SPEED);
+      Motor_L(MED_SPEED);
+    }
+  }
+  else
+  {
+    while (digitalRead(sensor10) && digitalRead(sensor11)) // Rightest sensor
+    {
+      Motor_R(-MED_SPEED);
+      Motor_L(MED_SPEED);
+    }
   }
   Motor_R(0);
   Motor_L(0);

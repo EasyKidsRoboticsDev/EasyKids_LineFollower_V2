@@ -2,8 +2,10 @@
 
 void setup() {
   lineFollowerSetup();
-  escSetup();
-  setESCSpeed(50);
+
+  // --- Choose Line Type --------
+  blackLine();
+  //whiteLine();
 }
 
 void loop() {
