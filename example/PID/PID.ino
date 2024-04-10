@@ -10,6 +10,9 @@
 
   readSensor();
 
+  Motor_L(Speed); (-100 to 100)
+  Motor_R(Speed); (-100 to 100)
+
   edfSetup(); 
   edfSpeed(speed); Speed (1-100)
   edfStop();
@@ -41,10 +44,10 @@ void loop() {
   delay(2000); // delay to start EDF
   
   // ------ Start Robot -------
-  lineFollowerTimer(20, 120, 20, 10, 3000); 
-  lineFollowerCross(30, 120, 20, 10); 
+  lineFollowerTimer(20, 100, 20, 10, 3000); 
+  lineFollowerCross(30, 100, 20, 10); 
   robotTurnRight(30); 
-  lineFollower90Left(30, 120, 20, 10); 
+  lineFollower90Left(30, 100, 20, 10); 
 
   // Stop EDF Controller
   edfStop();

@@ -225,6 +225,8 @@ signed int Read_error(void)
 /// Function to set speed of right motor///
 void Motor_L(signed int speed)
 {
+  speed = map(speed, -100, 100, -250, 250);
+
   // Max speed = 250
   if (!speed)
   {
@@ -257,6 +259,8 @@ void Motor_L(signed int speed)
 /// Function to set speed of left motor///
 void Motor_R(signed int speed)
 {
+  speed = map(speed, -100, 100, -250, 250);
+
   // Max speed = 250
   if (!speed)
   {
@@ -406,6 +410,10 @@ void lineFollower90Right(int MED_SPEED, int max_speed, int KP, int KD)
 
 void robotTurnLeft(int MED_SPEED)
 {
+  Motor_R(MED_SPEED);
+  Motor_L(-MED_SPEED);
+  delay(70);
+
   if (invertedLine)
   {
     while (!digitalRead(sensor1) && !digitalRead(sensor2)) // Leftest sensor
@@ -416,7 +424,7 @@ void robotTurnLeft(int MED_SPEED)
   }
   else
   {
-    while (digitalRead(sensor1) && digitalRead(sensor1)) // Leftest sensor
+    while (digitalRead(sensor1) && digitalRead(sensor2)) // Leftest sensor
     {
       Motor_R(MED_SPEED);
       Motor_L(-MED_SPEED);
@@ -428,6 +436,10 @@ void robotTurnLeft(int MED_SPEED)
 
 void robotTurnRight(int MED_SPEED)
 {
+  Motor_R(-MED_SPEED);
+  Motor_L(MED_SPEED);
+  delay(70);
+  
   if (invertedLine)
   {
     while (!digitalRead(sensor10) && !digitalRead(sensor11)) // Rightest sensor
