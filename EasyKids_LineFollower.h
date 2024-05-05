@@ -375,8 +375,7 @@ void lineSkipCross(int MED_SPEED, int max_speed, int KP, int KD, int timer)
   {
     if(invertedLine)
     {
-      if((!digitalRead(sensor1) || !digitalRead(sensor2) || !digitalRead(sensor10) || !digitalRead(sensor11)) && // 2 Outer left sensors AND 2 Outer right sensors
-          (!digitalRead(sensor2) || !digitalRead(sensor3) || !digitalRead(sensor9) || !digitalRead(sensor10))) // 2 Outer left sensors AND 2 Outer right sensors
+      if(digitalRead(sensor1) && digitalRead(sensor2) && digitalRead(sensor10) && digitalRead(sensor11)) // 2 Outer left sensors AND 2 Outer right sensors
       {
         Motor_R(MED_SPEED);
         Motor_L(MED_SPEED);
@@ -388,8 +387,7 @@ void lineSkipCross(int MED_SPEED, int max_speed, int KP, int KD, int timer)
     }
     else
     {
-      if((digitalRead(sensor1) || digitalRead(sensor2) || digitalRead(sensor10) || digitalRead(sensor11)) && // 2 Outer left sensors AND 2 Outer right sensors
-        (digitalRead(sensor2) || digitalRead(sensor3) || digitalRead(sensor9) || digitalRead(sensor10))) // 2 Outer left sensors AND 2 Outer right sensors
+      if(!digitalRead(sensor1) && !digitalRead(sensor2) && !digitalRead(sensor10) && !digitalRead(sensor11)) // 2 Outer left sensors AND 2 Outer right sensors
       {
         Motor_R(MED_SPEED);
         Motor_L(MED_SPEED);
