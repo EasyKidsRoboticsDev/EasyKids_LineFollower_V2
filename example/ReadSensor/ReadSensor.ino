@@ -2,7 +2,8 @@
 
 void setup() {
   lineFollowerSetup();
-
+  sensorNum(11);
+  
   // --- Choose Line Type --------
   blackLine();
   //whiteLine();

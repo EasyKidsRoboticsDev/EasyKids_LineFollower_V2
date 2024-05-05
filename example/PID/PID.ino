@@ -4,6 +4,7 @@
 <<<<< Command >>>>>
 
   lineFollowerSetup();
+  sensorNum(); --> 7 / 9 / 11
 
   blackLine();
   whiteLine();
@@ -30,6 +31,7 @@
 
 void setup() {
   lineFollowerSetup();
+  sensorNum(7);
   edfSetup(); 
   blackLine();
 }
