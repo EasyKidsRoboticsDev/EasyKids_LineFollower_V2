@@ -290,7 +290,7 @@ void Motor_R(signed int speed)
   return;
 }
 
-void pidLineFollower(int MED_SPEED, int max_speed, int KP, int KD)
+void pidLine(int MED_SPEED, int max_speed, int KP, int KD)
 {
   error_actual = Read_error();
 
@@ -335,25 +335,25 @@ void pidLineFollower(int MED_SPEED, int max_speed, int KP, int KD)
   Motor_L(speed_1);
 }
 
-void lineFollowerTimer(int MED_SPEED, int max_speed, int KP, int KD, int timer)
+void lineTimer(int MED_SPEED, int max_speed, int KP, int KD, int timer)
 {
   int timeSince = millis();
   while (millis() - timeSince < timer)
   {
-    pidLineFollower(MED_SPEED, max_speed, KP, KD);
+    pidLine(MED_SPEED, max_speed, KP, KD);
   }
   Motor_R(0);
   Motor_L(0);
 }
 
-void lineFollowerCross(int MED_SPEED, int max_speed, int KP, int KD)
+void lineCross(int MED_SPEED, int max_speed, int KP, int KD)
 {
   if (invertedLine)
   {
     while ((!digitalRead(sensor1) || !digitalRead(sensor2) || !digitalRead(sensor10) || !digitalRead(sensor11)) && // 2 Outer left sensors AND 2 Outer right sensors
           (!digitalRead(sensor2) || !digitalRead(sensor3) || !digitalRead(sensor9) || !digitalRead(sensor10))) // 2 Outer left sensors AND 2 Outer right sensors
     {
-      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
   else
@@ -361,47 +361,83 @@ void lineFollowerCross(int MED_SPEED, int max_speed, int KP, int KD)
     while ((digitalRead(sensor1) || digitalRead(sensor2) || digitalRead(sensor10) || digitalRead(sensor11)) && // 2 Outer left sensors AND 2 Outer right sensors
           (digitalRead(sensor2) || digitalRead(sensor3) || digitalRead(sensor9) || digitalRead(sensor10))) // 2 Outer left sensors AND 2 Outer right sensors
     {
-      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
   Motor_R(0);
   Motor_L(0);
 }
 
-void lineFollower90Left(int MED_SPEED, int max_speed, int KP, int KD)
+void lineSkipCross(int MED_SPEED, int max_speed, int KP, int KD, int timer)
+{
+  int timeSince = millis();
+  while (millis() - timeSince < timer)
+  {
+    if(invertedLine)
+    {
+      if((!digitalRead(sensor1) || !digitalRead(sensor2) || !digitalRead(sensor10) || !digitalRead(sensor11)) && // 2 Outer left sensors AND 2 Outer right sensors
+          (!digitalRead(sensor2) || !digitalRead(sensor3) || !digitalRead(sensor9) || !digitalRead(sensor10))) // 2 Outer left sensors AND 2 Outer right sensors
+      {
+        Motor_R(MED_SPEED);
+        Motor_L(MED_SPEED);
+      }
+      else
+      {
+        pidLine(MED_SPEED, max_speed, KP, KD);
+      }
+    }
+    else
+    {
+      if((digitalRead(sensor1) || digitalRead(sensor2) || digitalRead(sensor10) || digitalRead(sensor11)) && // 2 Outer left sensors AND 2 Outer right sensors
+        (digitalRead(sensor2) || digitalRead(sensor3) || digitalRead(sensor9) || digitalRead(sensor10))) // 2 Outer left sensors AND 2 Outer right sensors
+      {
+        Motor_R(MED_SPEED);
+        Motor_L(MED_SPEED);
+      }
+      else
+      {
+        pidLine(MED_SPEED, max_speed, KP, KD);
+      }
+    }
+  }
+  Motor_R(0);
+  Motor_L(0);
+}
+
+void line90Left(int MED_SPEED, int max_speed, int KP, int KD)
 {
   if (invertedLine)
   {
     while (!digitalRead(sensor1) || !digitalRead(sensor2) || !digitalRead(sensor3) || !digitalRead(sensor4)) // 3 Left sensors
     {
-      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
   else
   {
     while (digitalRead(sensor1) || digitalRead(sensor2) || digitalRead(sensor3) || digitalRead(sensor4)) // 3 Left sensors
     {
-      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
   Motor_R(0);
   Motor_L(0);
 }
 
-void lineFollower90Right(int MED_SPEED, int max_speed, int KP, int KD)
+void line90Right(int MED_SPEED, int max_speed, int KP, int KD)
 {
   if (invertedLine)
   {
     while (!digitalRead(sensor8) || !digitalRead(sensor9) || !digitalRead(sensor10) || !digitalRead(sensor11)) // 3 Right sensors
     {
-      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
   else
   {
     while (digitalRead(sensor8) || digitalRead(sensor9) || digitalRead(sensor10) || digitalRead(sensor11)) // 3 Right sensors
     {
-      pidLineFollower(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
   Motor_R(0);

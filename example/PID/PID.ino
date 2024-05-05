@@ -14,16 +14,17 @@
   Motor_R(Speed); (-100 to 100)
 
   edfSetup(); 
-  edfSpeed(speed); Speed (1-100)
+  edfSpeed(speed); Speed (1-100) // Suction Motor
   edfStop();
 
-  pidLineFollower(Speed, Max_Speed, KP, KD);
-  lineFollowerTimer(Speed, Max_Speed, KP, KD, Time(ms)); 
-  lineFollowerCross(Speed, Max_Speed, KP, KD); 
-  lineFollower90Left(Speed, Max_Speed, KP, KD); 
-  lineFollower90Right(Speed, Max_Speed, KP, KD); 
-  robotTurnLeft(Speed); 
-  robotTurnRight(Speed);
+  pidLine(Speed, Max_Speed, KP, KD);
+  lineTimer(Speed, Max_Speed, KP, KD, Time(ms)); // PID + Timer
+  lineCross(Speed, Max_Speed, KP, KD); // PID Until Cross
+  lineSkipCross(Speed, Max_Speed, KP, KD, Time(ms));  // PID + Timer + Skip Cross
+  line90Left(Speed, Max_Speed, KP, KD);  // PID Until Line on Left
+  line90Right(Speed, Max_Speed, KP, KD); // PID Until Line on Right
+  robotTurnLeft(Speed); // Turn Left
+  robotTurnRight(Speed); // Turn Right
    
 */
 
@@ -44,10 +45,10 @@ void loop() {
   delay(2000); // delay to start EDF
   
   // ------ Start Robot -------
-  lineFollowerTimer(20, 100, 20, 10, 3000); 
-  lineFollowerCross(30, 100, 20, 10); 
+  lineTimer(20, 100, 20, 10, 3000); 
+  lineCross(30, 100, 20, 10); 
   robotTurnRight(30); 
-  lineFollower90Left(30, 100, 20, 10); 
+  line90Left(30, 100, 20, 10); 
 
   // Stop EDF Controller
   edfStop();
