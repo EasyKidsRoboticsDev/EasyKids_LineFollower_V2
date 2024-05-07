@@ -19,8 +19,6 @@ enum
   LEFT
 } out_state = CENTER;
 
-int numSensor = 7;
-
 signed int error_actual = 0;
 signed int error_anterior = 0;
 int error_sum = 0;
@@ -86,13 +84,6 @@ void blackLine()
 void whiteLine()
 {
   invertedLine = true;
-}
-
-void sensorNum(int n)
-{
-  if(n == 11) { numSensor = 11; }
-  else if(n == 9) { numSensor = 9; }
-  else { numSensor = 7; }
 }
 
 void edfSetup()
@@ -169,16 +160,8 @@ signed int Read_error(void)
     b4 = digitalRead(sensor8);
     b5 = digitalRead(sensor3);
     b6 = digitalRead(sensor9);
-    if(numSensor == 9) 
-    { 
-      b7 = digitalRead(sensor2);
-      b8 = digitalRead(sensor10);
-    }
-    if(numSensor == 11) 
-    {
-      b9 = checkSensor(sensor1);
-      b10 = checkSensor(sensor11); 
-    }
+    b7 = digitalRead(sensor2);
+    b8 = digitalRead(sensor10);
   }
   else
   {
@@ -189,19 +172,11 @@ signed int Read_error(void)
     b4 = !(digitalRead(sensor8));
     b5 = !(digitalRead(sensor3));
     b6 = !(digitalRead(sensor9));
-    if(numSensor == 9) 
-    { 
-      b7 = !(digitalRead(sensor2));
-      b8 = !(digitalRead(sensor10));
-    }
-    if(numSensor == 11) 
-    {
-      b9 = !(checkSensor(sensor1));
-      b10 = !(checkSensor(sensor11)); 
-    }
+    b7 = !(digitalRead(sensor2));
+    b8 = !(digitalRead(sensor10));
   }
 
-  if (b0 || b1 || b2 || b3 || b4 || b5 || b6 || b7 || b8 || b9 || b10)
+  if (b0 || b1 || b2 || b3 || b4 || b5 || b6 || b7 || b8)
   {
 
     /*Negative left sensor*/
@@ -210,38 +185,18 @@ signed int Read_error(void)
     error = (b5) ? (0 - 6) : error;
     error = (b1 && b3) ? (0 - 3) : error;
     error = (b3 && b5) ? (0 - 5) : error;
-
-    if(numSensor == 9) 
-    { 
-      error = (b7) ? (0 - 8) : error;
-      error = (b5 && b7) ? (0 - 7) : error;
-    }
-
-    if(numSensor == 11) 
-    { 
-      error = (b9) ? (0 - 10) : error;
-      error = (b7 && b9) ? (0 - 9) : error;
-    }
+    error = (b7) ? (0 - 8) : error;
+    error = (b5 && b7) ? (0 - 7) : error;
 
     /*Positive right sensor*/
     error = (b2) ? 2 : error;
     error = (b4) ? 4 : error;
     error = (b6) ? 6 : error;
     error = (b2 && b4) ? 3 : error;
-    error = (b4 && b6) ? 5 : error;
-    
-    if(numSensor == 9) 
-    { 
-      error = (b8) ? 8 : error;
-      error = (b6 && b8) ? 7 : error;
-    }
+    error = (b4 && b6) ? 5 : error; 
+    error = (b8) ? 8 : error;
+    error = (b6 && b8) ? 7 : error;
 
-    if(numSensor == 11) 
-    { 
-      error = (b10) ? 10 : error;
-      error = (b8 && b10) ? 9 : error;
-    
-    }
     /*Neutral middle sensor*/
     error = (b0) ? 0 : error;
     error = (b0 && b1) ? (0 - 1) : error;
@@ -403,52 +358,18 @@ void lineCross(int MED_SPEED, int max_speed, int KP, int KD)
   Motor_L(0);
 }
 
-void lineSkipCross(int MED_SPEED, int max_speed, int KP, int KD, int timer)
-{
-  int timeSince = millis();
-  while (millis() - timeSince < timer)
-  {
-    if(invertedLine)
-    {
-      if(digitalRead(sensor3) && digitalRead(sensor4) && digitalRead(sensor5) && digitalRead(sensor6) && digitalRead(sensor7) && digitalRead(sensor8) && digitalRead(sensor9)) // 2 Outer left sensors AND 2 Outer right sensors
-      {
-        Motor_R(MED_SPEED);
-        Motor_L(MED_SPEED);
-      }
-      else
-      {
-        pidLine(MED_SPEED, max_speed, KP, KD);
-      }
-    }
-    else
-    {
-      if(!digitalRead(sensor3) && !digitalRead(sensor4) && !digitalRead(sensor5) && !digitalRead(sensor6) && !digitalRead(sensor7) && !digitalRead(sensor8) && !digitalRead(sensor9)) // 2 Outer left sensors AND 2 Outer right sensors
-      {
-        Motor_R(MED_SPEED);
-        Motor_L(MED_SPEED);
-      }
-      else
-      {
-        pidLine(MED_SPEED, max_speed, KP, KD);
-      }
-    }
-  }
-  Motor_R(0);
-  Motor_L(0);
-}
-
 void line90Left(int MED_SPEED, int max_speed, int KP, int KD)
 {
   if (invertedLine)
   {
-    while (!digitalRead(sensor3) || !digitalRead(sensor4) || !digitalRead(sensor5) || !digitalRead(sensor6)) // 3 Left sensors
+    while (!digitalRead(sensor2) || !digitalRead(sensor3) || !digitalRead(sensor4) || !digitalRead(sensor5)) // 3 Left sensors
     {
       pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
   else
   {
-    while (digitalRead(sensor3) || digitalRead(sensor4) || digitalRead(sensor5) || digitalRead(sensor6)) // 3 Left sensors
+    while (digitalRead(sensor2) || digitalRead(sensor3) || digitalRead(sensor4) || digitalRead(sensor5)) // 3 Left sensors
     {
       pidLine(MED_SPEED, max_speed, KP, KD);
     }
@@ -461,14 +382,14 @@ void line90Right(int MED_SPEED, int max_speed, int KP, int KD)
 {
   if (invertedLine)
   {
-    while (!digitalRead(sensor6) || !digitalRead(sensor7) || !digitalRead(sensor8) || !digitalRead(sensor9)) // 3 Right sensors
+    while (!digitalRead(sensor7) || !digitalRead(sensor8) || !digitalRead(sensor9) || !digitalRead(sensor10)) // 3 Right sensors
     {
       pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
   else
   {
-    while (digitalRead(sensor6) || digitalRead(sensor7) || digitalRead(sensor8) || digitalRead(sensor9)) // 3 Right sensors
+    while (digitalRead(sensor7) || digitalRead(sensor8) || digitalRead(sensor9) || digitalRead(sensor10)) // 3 Right sensors
     {
       pidLine(MED_SPEED, max_speed, KP, KD);
     }
@@ -485,7 +406,7 @@ void robotTurnLeft(int MED_SPEED)
 
   if (invertedLine)
   {
-    while (!digitalRead(sensor3) && !digitalRead(sensor4)) // Leftest sensor
+    while (!digitalRead(sensor2) && !digitalRead(sensor3)) // Leftest sensor
     {
       Motor_R(MED_SPEED);
       Motor_L(-MED_SPEED);
@@ -493,7 +414,7 @@ void robotTurnLeft(int MED_SPEED)
   }
   else
   {
-    while (digitalRead(sensor3) && digitalRead(sensor4)) // Leftest sensor
+    while (digitalRead(sensor2) && digitalRead(sensor3)) // Leftest sensor
     {
       Motor_R(MED_SPEED);
       Motor_L(-MED_SPEED);
@@ -511,7 +432,7 @@ void robotTurnRight(int MED_SPEED)
   
   if (invertedLine)
   {
-    while (!digitalRead(sensor8) && !digitalRead(sensor9)) // Rightest sensor
+    while (!digitalRead(sensor9) && !digitalRead(sensor10)) // Rightest sensor
     {
       Motor_R(-MED_SPEED);
       Motor_L(MED_SPEED);
@@ -519,7 +440,7 @@ void robotTurnRight(int MED_SPEED)
   }
   else
   {
-    while (digitalRead(sensor8) && digitalRead(sensor9)) // Rightest sensor
+    while (digitalRead(sensor9) && digitalRead(sensor10)) // Rightest sensor
     {
       Motor_R(-MED_SPEED);
       Motor_L(MED_SPEED);
