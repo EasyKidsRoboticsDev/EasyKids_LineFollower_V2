@@ -222,7 +222,9 @@ void Motor_L(signed int speed)
   // Max speed = 250
   if (!speed)
   {
-    analogWrite(3, 0);
+    analogWrite(3, 255);
+    digitalWrite(18, HIGH);
+    digitalWrite(19, HIGH);
   }
   else
   {
@@ -256,7 +258,9 @@ void Motor_R(signed int speed)
   // Max speed = 250
   if (!speed)
   {
-    analogWrite(11, 0);
+    analogWrite(11, 255);
+    digitalWrite(10, HIGH);
+    digitalWrite(17, HIGH);
   }
   else
   {
