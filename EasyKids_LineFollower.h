@@ -331,9 +331,9 @@ void pidLine(int MED_SPEED, int max_speed, int KP, int KD)
   Motor_L(speed_1);
 }
 
-void lineTimer(int MED_SPEED, int max_speed, int KP, int KD, int timer)
+void lineTimer(int MED_SPEED, int max_speed, int KP, int KD, long timer)
 {
-  int timeSince = millis();
+  long timeSince = millis();
   while (millis() - timeSince < timer)
   {
     pidLine(MED_SPEED, max_speed, KP, KD);
