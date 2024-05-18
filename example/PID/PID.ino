@@ -23,8 +23,8 @@
   lineSkipCross(Speed, Max_Speed, KP, KD, Time(ms));  // PID + Timer + Skip Cross
   line90Left(Speed, Max_Speed, KP, KD);  // PID Until Line on Left
   line90Right(Speed, Max_Speed, KP, KD); // PID Until Line on Right
-  robotTurnLeft(Speed); // Turn Left
-  robotTurnRight(Speed); // Turn Right
+  lineTurnLeft(Speed); // Turn Left
+  lineTurnRight(Speed); // Turn Right
    
 */
 
@@ -47,7 +47,7 @@ void loop() {
   // ------ Start Robot -------
   lineTimer(20, 100, 20, 10, 3000); 
   lineCross(30, 100, 20, 10); 
-  robotTurnRight(30); 
+  lineTurnRight(30); 
   line90Left(30, 100, 20, 10); 
 
   // Stop EDF Controller
