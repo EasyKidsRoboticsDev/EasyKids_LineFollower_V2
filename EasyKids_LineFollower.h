@@ -358,9 +358,9 @@ void lineCross(int MED_SPEED, int max_speed, int KP, int KD)
       pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
-  Motor_L(setSpeed);
-  Motor_R(setSpeed);
-  delay(map(setSpeed, 0, 100, 100, 0));
+  Motor_L(MED_SPEED);
+  Motor_R(MED_SPEED);
+  delay(map(MED_SPEED, 0, 100, 100, 0));
   Motor_R(0);
   Motor_L(0);
 }
@@ -381,9 +381,9 @@ void line90Left(int MED_SPEED, int max_speed, int KP, int KD)
       pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
-  Motor_L(setSpeed);
-  Motor_R(setSpeed);
-  delay(map(setSpeed, 0, 100, 100, 0));
+  Motor_L(MED_SPEED);
+  Motor_R(MED_SPEED);
+  delay(map(MED_SPEED, 0, 100, 100, 0));
   Motor_R(0);
   Motor_L(0);
 }
@@ -404,9 +404,9 @@ void line90Right(int MED_SPEED, int max_speed, int KP, int KD)
       pidLine(MED_SPEED, max_speed, KP, KD);
     }
   }
-  Motor_L(setSpeed);
-  Motor_R(setSpeed);
-  delay(map(setSpeed, 0, 100, 100, 0));
+  Motor_L(MED_SPEED);
+  Motor_R(MED_SPEED);
+  delay(map(MED_SPEED, 0, 100, 100, 0));
   Motor_R(0);
   Motor_L(0);
 }
