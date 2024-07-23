@@ -20,7 +20,6 @@
   pidLine(Speed, Max_Speed, KP, KD);
   lineTimer(Speed, Max_Speed, KP, KD, Time(ms)); // PID + Timer
   lineCross(Speed, Max_Speed, KP, KD); // PID Until Cross
-  lineSkipCross(Speed, Max_Speed, KP, KD, Time(ms));  // PID + Timer + Skip Cross
   line90Left(Speed, Max_Speed, KP, KD);  // PID Until Line on Left
   line90Right(Speed, Max_Speed, KP, KD); // PID Until Line on Right
   lineTurnLeft(Speed); // Turn Left
