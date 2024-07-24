@@ -8,6 +8,7 @@
 #define PWM_R1 9 // Right PWM 1
 #define PWM_R2 10 // Right PWM 2
 
+#define EDF_PIN 3
 #define START_SW A6
 #define OLED_RESET -1
 
@@ -29,7 +30,7 @@ int previous_error = 0;
 int error_sum = 0;
 
 Adafruit_SSD1306 display(OLED_RESET);
-Servo ESC;
+Servo EDF;
 
 /// Function to set speed of left motor ///
 void Motor_L(int speed)
@@ -83,18 +84,18 @@ void Motor_R(int speed)
 
 void edfSetup()
 {
-  ESC.attach(3);               // Brushless attach
-  ESC.writeMicroseconds(1000); // 1000-2500 maxspeed for Brushless
+  EDF.attach(EDF_PIN);               // Brushless attach
+  EDF.writeMicroseconds(1000);       // 1000-2500 maxspeed for Brushless
 }
 
 void edfSpeed(int speed)
 {
-  ESC.writeMicroseconds(map(speed, 0, 100, 1000, 2500)); // Map speed for Brushless
+  EDF.writeMicroseconds(map(speed, 0, 100, 1000, 2500)); // Map speed for Brushless
 }
 
 void edfStop()
 {
-  ESC.writeMicroseconds(1000); // Stop Brushless
+  EDF.writeMicroseconds(1000); // Stop Brushless
 }
 
 void waitForStart()
@@ -134,6 +135,7 @@ void lineFollowerSetup()
   Motor_L(0);
   Motor_R(0);
 
+  // Default display
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.setTextColor(WHITE);

@@ -1,16 +1,17 @@
 #include <Servo.h>
-Servo ESC;
+
+#define IN1_L 18
+#define IN2_L 19
+#define EN_L 3
+
+#define IN1_R 10
+#define IN2_R 17
+#define EN_R 11
+
+#define EDF_PIN 9
+#define START_SW 2
 
 #define OUT_LINE 16
-int esc_speed = 1000;
-bool invertedLine = false;
-
-enum
-{
-  HOME,
-  STARTING,
-  RUN
-} state = HOME;
 
 enum
 {
@@ -19,61 +20,29 @@ enum
   LEFT
 } out_state = CENTER;
 
-signed int error_actual = 0;
-signed int error_anterior = 0;
+const int sensorArr[11] = { A7, 4, 5, 6, 7, 8, 12, 14, 15, 16, A6 };
+
+bool invertedLine = false;
+int error_loop_count = 0;
+int previous_error = 0;
 int error_sum = 0;
-int error = 0;
 
-signed int speed_1 = 0;
-signed int speed_2 = 0;
+Servo EDF;
 
-signed int proportional = 0;
-signed int derivative = 0;
-
-int sensor1 = A7;
-int sensor2 = 4;
-int sensor3 = 5;
-int sensor4 = 6;
-int sensor5 = 7;
-int sensor6 = 8;
-int sensor7 = 12;
-int sensor8 = 14;
-int sensor9 = 15;
-int sensor10 = 16;
-int sensor11 = A6;
-
-void lineFollowerSetup()
+void edfSetup()
 {
-  Serial.begin(9600);
+  EDF.attach(EDF_PIN);               // Brushless attach
+  EDF.writeMicroseconds(1000);      // 1000-2500 maxspeed for Brushless
+}
 
-  pinMode(sensor1, INPUT);
-  pinMode(sensor2, INPUT);
-  pinMode(sensor3, INPUT);
-  pinMode(sensor4, INPUT);
-  pinMode(sensor5, INPUT);
-  pinMode(sensor6, INPUT);
-  pinMode(sensor7, INPUT);
-  pinMode(sensor8, INPUT);
-  pinMode(sensor9, INPUT);
-  pinMode(sensor10, INPUT);
-  pinMode(sensor11, INPUT);
+void edfSpeed(int speed)
+{
+  EDF.writeMicroseconds(map(speed, 0, 100, 1000, 2500)); // Map speed for Brushless
+}
 
-  pinMode(3, OUTPUT);
-  pinMode(19, OUTPUT);
-  pinMode(18, OUTPUT);
-  pinMode(17, OUTPUT);
-  pinMode(11, OUTPUT);
-  pinMode(10, OUTPUT);
-
-  pinMode(2, INPUT_PULLUP);
-  // motor L Stop
-  digitalWrite(19, HIGH);
-  digitalWrite(18, HIGH);
-  analogWrite(3, 0);
-  // motor R Stop
-  digitalWrite(17, HIGH);
-  digitalWrite(10, HIGH);
-  analogWrite(11, 0);
+void edfStop()
+{
+  EDF.writeMicroseconds(1000); // Stop Brushless
 }
 
 void blackLine()
@@ -86,125 +55,173 @@ void whiteLine()
   invertedLine = true;
 }
 
-void edfSetup()
+void lineFollowerSetup()
 {
-  ESC.attach(9);               // Brushless attach
-  ESC.writeMicroseconds(1000); // 1000-2500 maxspeed for Brushless
-  // esc_speed = map(speed, 0, 100, 1000, 2500);  //1000-2500 maxspeed for Brushless
+  Serial.begin(9600);
+
+  for (short int i = 0; i < 11; i++) {
+    pinMode(sensorArr[i], INPUT);
+  }
+
+  pinMode(IN1_L, OUTPUT);
+  pinMode(IN2_L, OUTPUT);
+  pinMode(EN_L, OUTPUT);
+
+  pinMode(IN1_R, OUTPUT);
+  pinMode(IN2_R, OUTPUT);
+  pinMode(EN_R, OUTPUT);
+
+  pinMode(START_SW, INPUT_PULLUP);
+
+
+  // Stop Motors
+  digitalWrite(IN1_L, HIGH);
+  digitalWrite(IN2_L, HIGH);
+  analogWrite(EN_L, 0);
+
+  digitalWrite(IN1_R, HIGH);
+  digitalWrite(IN2_R, HIGH);
+  analogWrite(EN_R, 0);
 }
 
-void edfSpeed(int speed)
-{
-  ESC.writeMicroseconds(map(speed, 0, 100, 1000, 2500)); // 1000-2500 maxspeed for Brushless
-}
-
-void edfStop()
-{
-  ESC.writeMicroseconds(1000); // 1000-2500 maxspeed for Brushless
-}
 
 void waitForStart()
 {
-  while (!digitalRead(2))
-  {
-  }
+  while (!digitalRead(START_SW)) {}
 }
 
 int sw_Start()
 {
-  return digitalRead(2);
+  return digitalRead(START_SW);
+}
+
+/// Function to set speed of left motor ///
+void Motor_L(int speed)
+{
+  speed = map(speed, -100, 100, -255, 255);
+
+  // Max speed = 255
+  if (!speed)
+  {
+    analogWrite(EN_L, 255);
+    digitalWrite(IN1_L, HIGH);
+    digitalWrite(IN2_L, HIGH);
+  }
+  else if(speed > 0)
+  {
+    speed = min(speed, 255);
+    analogWrite(EN_L, speed);
+    digitalWrite(IN1_L, HIGH);
+    digitalWrite(IN2_L, LOW);
+  }
+  else 
+  {
+    speed = abs(max(speed, -255));
+    analogWrite(EN_L, speed);
+    digitalWrite(IN1_L, LOW);
+    digitalWrite(IN2_L, HIGH);
+  }
+}
+
+/// Function to set speed of right motor ///
+void Motor_R(signed int speed)
+{
+  speed = map(speed, -100, 100, -255, 255);
+
+  // Max speed = 255
+  if (!speed)
+  {
+    analogWrite(EN_R, 255);
+    digitalWrite(IN1_R, HIGH);
+    digitalWrite(IN2_R, HIGH);
+  }
+  else if(speed > 0)
+  {
+    speed = min(speed, 255);
+    analogWrite(EN_R, speed);
+    digitalWrite(IN1_R, HIGH);
+    digitalWrite(IN2_R, LOW);
+  }
+  else 
+  {
+    speed = abs(max(speed, -255));
+    analogWrite(EN_R, speed);
+    digitalWrite(IN1_R, LOW);
+    digitalWrite(IN2_R, HIGH);
+  }
 }
 
 int checkSensor(int pin)
 {
-  if (analogRead(pin) > 200)
-  {
-    return 1;
-  }
-  else
-  {
-    return 0;
-  }
+  return (analogRead(pin) > 200) ? 1 : 0;
 }
 
 void readSensor()
 {
+  bool sensorVal = 0;
+
   while (1)
   {
-    Serial.print(!(checkSensor(sensor1)));
-    Serial.print(!(digitalRead(sensor2)));
-    Serial.print(!(digitalRead(sensor3)));
-    Serial.print(!(digitalRead(sensor4)));
-    Serial.print(!(digitalRead(sensor5)));
-    Serial.print(!(digitalRead(sensor6)));
-    Serial.print(!(digitalRead(sensor7)));
-    Serial.print(!(digitalRead(sensor8)));
-    Serial.print(!(digitalRead(sensor9)));
-    Serial.print(!(digitalRead(sensor10)));
-    Serial.println(!(checkSensor(sensor11)));
-    delay(100);
+    for (short int i = 0; i < 11; i++) 
+    {
+      sensorVal = ((i == 0) || (i == 10)) ? !checkSensor(sensorArr[i]) : !digitalRead(sensorArr[i]);
+      Serial.print(sensorVal); // Serial Monitor Output
+    }
+    Serial.println("");
   }
 }
 
-signed int Read_error(void)
+int readError()
 {
-  int b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10;
-  signed int error = 0;
+  bool sensorVal[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+  int error = 0;
 
-  if (invertedLine)
+  bool onLine = 0;
+  for (short int i = 0; i < 11; i++) 
   {
-    b0 = digitalRead(sensor6);
-    b1 = digitalRead(sensor5);
-    b2 = digitalRead(sensor7);
-    b3 = digitalRead(sensor4);
-    b4 = digitalRead(sensor8);
-    b5 = digitalRead(sensor3);
-    b6 = digitalRead(sensor9);
-    b7 = digitalRead(sensor2);
-    b8 = digitalRead(sensor10);
-  }
-  else
-  {
-    b0 = !(digitalRead(sensor6));
-    b1 = !(digitalRead(sensor5));
-    b2 = !(digitalRead(sensor7));
-    b3 = !(digitalRead(sensor4));
-    b4 = !(digitalRead(sensor8));
-    b5 = !(digitalRead(sensor3));
-    b6 = !(digitalRead(sensor9));
-    b7 = !(digitalRead(sensor2));
-    b8 = !(digitalRead(sensor10));
+    if((i == 0) || (i == 10)) {
+      sensorVal[i] = invertedLine ? checkSensor(sensorArr[i]) : !checkSensor(sensorArr[i]);
+    }
+    else {
+      sensorVal[i] = invertedLine ? digitalRead(sensorArr[i]) : !digitalRead(sensorArr[i]);
+    }
+    onLine |= sensorVal[i];
   }
 
-  if (b0 || b1 || b2 || b3 || b4 || b5 || b6 || b7 || b8)
+  if (onLine)
   {
-
-    /*Negative left sensor*/
-    error = (b1) ? (0 - 2) : error;
-    error = (b3) ? (0 - 4) : error;
-    error = (b5) ? (0 - 6) : error;
-    error = (b1 && b3) ? (0 - 3) : error;
-    error = (b3 && b5) ? (0 - 5) : error;
-    error = (b7) ? (0 - 8) : error;
-    error = (b5 && b7) ? (0 - 7) : error;
-
-    /*Positive right sensor*/
-    error = (b2) ? 2 : error;
-    error = (b4) ? 4 : error;
-    error = (b6) ? 6 : error;
-    error = (b2 && b4) ? 3 : error;
-    error = (b4 && b6) ? 5 : error; 
-    error = (b8) ? 8 : error;
-    error = (b6 && b8) ? 7 : error;
-
-    /*Neutral middle sensor*/
-    error = (b0) ? 0 : error;
-    error = (b0 && b1) ? (0 - 1) : error;
-    error = (b0 && b2) ? 1 : error;
-
-    out_state = ((error <= 4) && (error >= (0 - 4))) ? CENTER : out_state;
-    out_state = ((error >= 5) && (error <= 10)) ? LEFT : out_state;
-    out_state = ((error <= (0 - 5)) && (error >= (0 - 10))) ? RIGHT : out_state;
+   /* Negative left sensor */
+    error = sensorArr[4]                   ? -2 : error; // b1
+    error = sensorArr[3]                   ? -4 : error; // b3
+    error = sensorArr[2]                   ? -6 : error; // b5
+    error = sensorArr[1]                   ? -8 : error; // b7
+    error = sensorArr[0]                   ? -10 : error; // b9
+    error = sensorArr[4] && sensorArr[3]   ? -3 : error; // b1 && b3
+    error = sensorArr[3] && sensorArr[2]   ? -5 : error; // b3 && b5
+    error = sensorArr[2] && sensorArr[1]   ? -7 : error; // b5 && b7
+    error = sensorArr[1] && sensorArr[0]   ? -9 : error; // b7 && b9
+    
+    
+    /* Positive right sensor */
+    error = sensorArr[6]                   ? 2 : error; // b2
+    error = sensorArr[7]                   ? 4 : error; // b4 
+    error = sensorArr[8]                   ? 6 : error; // b6 
+    error = sensorArr[9]                   ? 8 : error; // b8
+    error = sensorArr[10]                  ? 10 : error; // b10
+    error = sensorArr[6] && sensorArr[7]   ? 3 : error; // b2 && b4
+    error = sensorArr[7] && sensorArr[8]   ? 5 : error; // b4 && b6
+    error = sensorArr[8] && sensorArr[9]   ? 7 : error; // b6 && b8
+    error = sensorArr[9] && sensorArr[10]  ? 9 : error; // b8 && b10
+    
+    
+    /* Neutral middle sensor */
+    error = sensorArr[5]                   ? 0 : error; // b0
+    error = sensorArr[5] && sensorArr[4]   ? -1 : error; // b0 && b1
+    error = sensorArr[5] && sensorArr[6]   ? 1 : error; // b0 && b2
+    
+    out_state = (error <= 4) && (error >= -4)   ? CENTER : out_state; 
+    out_state = (error >= 5) && (error <= 10)   ? LEFT : out_state;
+    out_state = (error <= -5) && (error >= -10) ? RIGHT: out_state;
 
     return error;
   }
@@ -214,83 +231,14 @@ signed int Read_error(void)
   }
 }
 
-/// Function to set speed of right motor///
-void Motor_L(signed int speed)
+void pidLine(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD)
 {
-  speed = map(speed, -100, 100, -255, 255);
 
-  // Max speed = 255
-  if (!speed)
-  {
-    analogWrite(3, 255);
-    digitalWrite(18, HIGH);
-    digitalWrite(19, HIGH);
-  }
-  else
-  {
-    speed = (speed >= 255) ? 255 : speed;
+  int speed_1 = 0;
+  int speed_2 = 0;
+  int current_error = readError();
 
-    if (speed >= 1)
-    {
-      analogWrite(3, speed);
-      digitalWrite(18, HIGH);
-      digitalWrite(19, LOW);
-    }
-    else
-    {
-      speed *= (0 - 1);
-      ////////////////////////
-      speed = (speed >= 255) ? 255 : speed;
-      ///////////////////////////////////
-      analogWrite(3, speed);
-      digitalWrite(18, LOW);
-      digitalWrite(19, HIGH);
-    }
-  }
-  return;
-}
-
-/// Function to set speed of left motor///
-void Motor_R(signed int speed)
-{
-  speed = map(speed, -100, 100, -255, 255);
-
-  // Max speed = 255
-  if (!speed)
-  {
-    analogWrite(11, 255);
-    digitalWrite(10, HIGH);
-    digitalWrite(17, HIGH);
-  }
-  else
-  {
-    speed = (speed >= 255) ? 255 : speed;
-
-    if (speed >= 1)
-    {
-      analogWrite(11, speed);
-      digitalWrite(10, HIGH);
-      digitalWrite(17, LOW);
-    }
-    else
-    {
-      speed *= (0 - 1);
-      ////////////////////////
-      speed = (speed >= 255) ? 255 : speed;
-      ///////////////////////////////////
-      analogWrite(11, speed);
-      digitalWrite(10, LOW);
-      digitalWrite(17, HIGH);
-    }
-  }
-  return;
-}
-
-void pidLine(int MED_SPEED, int max_speed, int KP, int KD)
-{
-  error_actual = Read_error();
-
-  if (error_actual == OUT_LINE)
+  if (current_error == OUT_LINE)
   {
     switch (out_state)
     {
@@ -299,142 +247,152 @@ void pidLine(int MED_SPEED, int max_speed, int KP, int KD)
       speed_2 = MED_SPEED;
       break;
     case LEFT:
-      speed_1 = max_speed;
-      speed_2 = (0 - max_speed);
+      speed_1 = MAX_SPEED;
+      speed_2 =  -MAX_SPEED;
       break;
     case RIGHT:
-      speed_1 = (0 - max_speed);
-      speed_2 = max_speed;
+      speed_1 = -MAX_SPEED;
+      speed_2 = MAX_SPEED;
       break;
     }
   }
   else
   {
-    proportional = (KP * error_actual);
-    derivative = (KD * (error_actual - error_anterior));
+    int output = (KP * current_error) + (KI * error_sum) + (KD * (current_error - previous_error));
 
-    error_sum++;
-    if (error_sum > 350)
+    error_loop_count++;
+    if (error_loop_count > 350)
     {
-      error_anterior = error_actual;
+      error_loop_count = 0;
+      previous_error = current_error;
+      error_sum += current_error;
+    }
+
+    if (current_error == 0)
+    {
       error_sum = 0;
-      error += error_actual;
     }
-    if (error_actual == 0)
-    {
-      error = 0;
-    }
-    speed_1 = MED_SPEED + (proportional + derivative);
-    speed_2 = MED_SPEED - (proportional + derivative);
+
+    speed_1 = MED_SPEED + output;
+    speed_2 = MED_SPEED - output;
   }
-  Motor_R(speed_2);
+
   Motor_L(speed_1);
+  Motor_R(speed_2);
 }
 
-void lineTimer(int MED_SPEED, int max_speed, int KP, int KD, long timer)
+void lineTimer(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD, long timer)
 {
   long timeSince = millis();
   while (millis() - timeSince < timer)
   {
-    pidLine(MED_SPEED, max_speed, KP, KD);
+    pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
   }
-  Motor_R(0);
   Motor_L(0);
+  Motor_R(0);
 }
 
-void lineCross(int MED_SPEED, int max_speed, int KP, int KD)
+void lineCross(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD) // 00011111000
 {
   if (invertedLine)
   {
-    while(!digitalRead(sensor4) || !digitalRead(sensor5) || !digitalRead(sensor6) || !digitalRead(sensor7) || !digitalRead(sensor8)) 
+    while(!digitalRead(sensorArr[3]) || !digitalRead(sensorArr[4]) || !digitalRead(sensorArr[5]) || !digitalRead(sensorArr[6]) || !digitalRead(sensorArr[7]))  
     {
-      pidLine(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
     }
   }
   else
   {
-    while(digitalRead(sensor4) || digitalRead(sensor5) || digitalRead(sensor6) || digitalRead(sensor7) || digitalRead(sensor8)) 
+    while(digitalRead(sensorArr[3]) || digitalRead(sensorArr[4]) || digitalRead(sensorArr[5]) || digitalRead(sensorArr[6]) || digitalRead(sensorArr[7]))
     {
-      pidLine(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
     }
   }
+
   Motor_L(MED_SPEED);
   Motor_R(MED_SPEED);
   delay(map(MED_SPEED, 0, 100, 100, 0));
-  Motor_R(0);
+
   Motor_L(0);
+  Motor_R(0);
 }
 
-void lineFork(int MED_SPEED, int max_speed, float KP, float KD)
+void lineFork(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD) //  00010001000
 {
   if (invertedLine)
   {
-    while (!digitalRead(sensor4) || !digitalRead(sensor8))
+    while (!digitalRead(sensorArr[3]) || !digitalRead(sensorArr[7]))
     {
-      pidLine(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
     }
   }
   else
   {
-    while (digitalRead(sensor4) || digitalRead(sensor8))
+    while (digitalRead(sensorArr[3]) || digitalRead(sensorArr[7]))
     {
-      pidLine(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
     }
   }
+
   Motor_L(MED_SPEED);
   Motor_R(MED_SPEED);
   delay(map(MED_SPEED, 0, 100, 100, 0));
+
   Motor_L(0);
   Motor_R(0);
 }
 
-void line90Left(int MED_SPEED, int max_speed, float KP, float KD)
+void line90Left(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD) // 00100100000
 {
   if (invertedLine)
   {
-    while (!digitalRead(sensor3) || !digitalRead(sensor6)) // 3 Left sensors
+    while (!digitalRead(sensorArr[2]) || !digitalRead(sensorArr[5])) 
     {
-      pidLine(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
     }
   }
   else
   {
-    while (digitalRead(sensor3) || digitalRead(sensor6)) // 3 Left sensors
+    while (digitalRead(sensorArr[2]) || digitalRead(sensorArr[5])) 
     {
-      pidLine(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
     }
   }
+
   Motor_L(MED_SPEED);
   Motor_R(MED_SPEED);
   delay(map(MED_SPEED, 0, 100, 100, 0));
-  Motor_R(0);
+
   Motor_L(0);
+  Motor_R(0);
 }
 
-void line90Right(int MED_SPEED, int max_speed, float KP, float KD)
+void line90Right(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD) // 00000100100
 {
   if (invertedLine)
   {
-    while (!digitalRead(sensor6) || !digitalRead(sensor9)) // 3 Right sensors
+    while (!digitalRead(sensorArr[5]) || !digitalRead(sensorArr[8])) 
     {
-      pidLine(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
     }
   }
   else
   {
-    while (digitalRead(sensor6) || digitalRead(sensor9)) // 3 Right sensors
+    while (digitalRead(sensorArr[5]) || digitalRead(sensorArr[8])) 
     {
-      pidLine(MED_SPEED, max_speed, KP, KD);
+      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
     }
   }
+
   Motor_L(MED_SPEED);
   Motor_R(MED_SPEED);
   delay(map(MED_SPEED, 0, 100, 100, 0));
-  Motor_R(0);
+
   Motor_L(0);
+  Motor_R(0);
 }
 
-void lineTurnLeft(int MED_SPEED)
+void lineTurnLeft(int MED_SPEED) // Second or third leftest sensor
 {
   Motor_R(MED_SPEED);
   Motor_L(-MED_SPEED);
@@ -442,7 +400,7 @@ void lineTurnLeft(int MED_SPEED)
 
   if (invertedLine)
   {
-    while (!digitalRead(sensor3) && !digitalRead(sensor4)) // Leftest sensor
+    while (!digitalRead(sensorArr[2]) && !digitalRead(sensorArr[3])) 
     {
       Motor_R(MED_SPEED);
       Motor_L(-MED_SPEED);
@@ -450,17 +408,18 @@ void lineTurnLeft(int MED_SPEED)
   }
   else
   {
-    while (digitalRead(sensor3) && digitalRead(sensor4)) // Leftest sensor
+    while (digitalRead(sensorArr[2]) && digitalRead(sensorArr[5])) 
     {
       Motor_R(MED_SPEED);
       Motor_L(-MED_SPEED);
     }
   }
-  Motor_R(0);
+
   Motor_L(0);
+  Motor_R(0);
 }
 
-void lineTurnRight(int MED_SPEED)
+void lineTurnRight(int MED_SPEED) // Second or third rightest sensor
 {
   Motor_R(-MED_SPEED);
   Motor_L(MED_SPEED);
@@ -468,7 +427,7 @@ void lineTurnRight(int MED_SPEED)
   
   if (invertedLine)
   {
-    while (!digitalRead(sensor8) && !digitalRead(sensor9)) // Rightest sensor
+    while (!digitalRead(sensorArr[7]) && !digitalRead(sensorArr[8]))
     {
       Motor_R(-MED_SPEED);
       Motor_L(MED_SPEED);
@@ -476,12 +435,13 @@ void lineTurnRight(int MED_SPEED)
   }
   else
   {
-    while (digitalRead(sensor8) && digitalRead(sensor9)) // Rightest sensor
+    while (digitalRead(sensorArr[7]) && digitalRead(sensorArr[8]))
     {
       Motor_R(-MED_SPEED);
       Motor_L(MED_SPEED);
     }
   }
-  Motor_R(0);
+
   Motor_L(0);
+  Motor_R(0);
 }
