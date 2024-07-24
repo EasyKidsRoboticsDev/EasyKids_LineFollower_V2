@@ -206,33 +206,33 @@ int readError()
   if (onLine)
   {
    /* Negative left sensor */
-    error = sensorArr[4]                   ? -2 : error; // b1
-    error = sensorArr[3]                   ? -4 : error; // b3
-    error = sensorArr[2]                   ? -6 : error; // b5
-    error = sensorArr[1]                   ? -8 : error; // b7
-    error = sensorArr[0]                   ? -10 : error; // b9
-    error = sensorArr[4] && sensorArr[3]   ? -3 : error; // b1 && b3
-    error = sensorArr[3] && sensorArr[2]   ? -5 : error; // b3 && b5
-    error = sensorArr[2] && sensorArr[1]   ? -7 : error; // b5 && b7
-    error = sensorArr[1] && sensorArr[0]   ? -9 : error; // b7 && b9
+    error = sensorVal[4]                   ? -2 : error; // b1
+    error = sensorVal[3]                   ? -4 : error; // b3
+    error = sensorVal[2]                   ? -6 : error; // b5
+    error = sensorVal[1]                   ? -8 : error; // b7
+    error = sensorVal[0]                   ? -10 : error; // b9
+    error = sensorVal[4] && sensorVal[3]   ? -3 : error; // b1 && b3
+    error = sensorVal[3] && sensorVal[2]   ? -5 : error; // b3 && b5
+    error = sensorVal[2] && sensorVal[1]   ? -7 : error; // b5 && b7
+    error = sensorVal[1] && sensorVal[0]   ? -9 : error; // b7 && b9
     
     
     /* Positive right sensor */
-    error = sensorArr[6]                   ? 2 : error; // b2
-    error = sensorArr[7]                   ? 4 : error; // b4 
-    error = sensorArr[8]                   ? 6 : error; // b6 
-    error = sensorArr[9]                   ? 8 : error; // b8
-    error = sensorArr[10]                  ? 10 : error; // b10
-    error = sensorArr[6] && sensorArr[7]   ? 3 : error; // b2 && b4
-    error = sensorArr[7] && sensorArr[8]   ? 5 : error; // b4 && b6
-    error = sensorArr[8] && sensorArr[9]   ? 7 : error; // b6 && b8
-    error = sensorArr[9] && sensorArr[10]  ? 9 : error; // b8 && b10
+    error = sensorVal[6]                   ? 2 : error; // b2
+    error = sensorVal[7]                   ? 4 : error; // b4 
+    error = sensorVal[8]                   ? 6 : error; // b6 
+    error = sensorVal[9]                   ? 8 : error; // b8
+    error = sensorVal[10]                  ? 10 : error; // b10
+    error = sensorVal[6] && sensorVal[7]   ? 3 : error; // b2 && b4
+    error = sensorVal[7] && sensorVal[8]   ? 5 : error; // b4 && b6
+    error = sensorVal[8] && sensorVal[9]   ? 7 : error; // b6 && b8
+    error = sensorVal[9] && sensorVal[10]  ? 9 : error; // b8 && b10
     
     
     /* Neutral middle sensor */
-    error = sensorArr[5]                   ? 0 : error; // b0
-    error = sensorArr[5] && sensorArr[4]   ? -1 : error; // b0 && b1
-    error = sensorArr[5] && sensorArr[6]   ? 1 : error; // b0 && b2
+    error = sensorVal[5]                   ? 0 : error; // b0
+    error = sensorVal[5] && sensorVal[4]   ? -1 : error; // b0 && b1
+    error = sensorVal[5] && sensorVal[6]   ? 1 : error; // b0 && b2
     
     out_state = (error <= 4) && (error >= -4)   ? CENTER : out_state; 
     out_state = (error >= 5) && (error <= 10)   ? LEFT : out_state;
