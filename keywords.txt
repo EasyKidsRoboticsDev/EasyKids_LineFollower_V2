@@ -1,18 +1,23 @@
 # KEYWORD2 specifies methods and functions
 
 lineFollowerSetup	KEYWORD2
-escSetup    KEYWORD2
-setESCSpeed    KEYWORD2
-readSensor    KEYWORD2
+blackLine	KEYWORD2
+whiteLine	KEYWORD2
 Motor_L    KEYWORD2
 Motor_R    KEYWORD2
-pidLineFollower    KEYWORD2
-lineFollowerTimer    KEYWORD2
-lineFollowerCross    KEYWORD2
-lineFollower90Left    KEYWORD2
-lineFollower90Right    KEYWORD2
-robotTurnLeft    KEYWORD2
-robotTurnRight    KEYWORD2
+waitForStart    KEYWORD2
+sw_Start    KEYWORD2
+edfSetup    KEYWORD2
+edfSpeed    KEYWORD2
+edfStop    KEYWORD2
+readSensor    KEYWORD2
+pidLine    KEYWORD2
+lineTimer    KEYWORD2
+lineCross    KEYWORD2
+line90Left    KEYWORD2
+line90Right    KEYWORD2
+lineTurnLeft    KEYWORD2
+lineTurnRight    KEYWORD2
 
 # KEYWORD3 specifies structures
 
