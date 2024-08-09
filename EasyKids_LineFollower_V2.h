@@ -1,3 +1,12 @@
+#ifndef EasyKids_LineFollower_V2_h
+#define EasyKids_LineFollower_V2_h
+
+// Restrict header files to be included
+#define USING_V2
+#ifdef USING_V1
+#error "Cannot use both versions at the same time. Please select only one version"
+#endif
+
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 #include <Servo.h>
@@ -460,3 +469,5 @@ void lineTurnRight(int MED_SPEED) // Second or third rightest sensor
   Motor_L(0);
   Motor_R(0);
 }
+
+#endif // EasyKids_LineFollower_V2.h

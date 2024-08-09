@@ -1,3 +1,12 @@
+#ifndef EasyKids_LineFollower_h
+#define EasyKids_LineFollower_h
+
+// Restrict header files to be included
+#define USING_V1
+#ifdef USING_V2
+#error "Cannot use both versions at the same time. Please select only one version"
+#endif
+
 #include <Servo.h>
 
 #define IN1_L 18
@@ -445,3 +454,5 @@ void lineTurnRight(int MED_SPEED) // Second or third rightest sensor
   Motor_L(0);
   Motor_R(0);
 }
+
+#endif // EasyKids_LineFollower.h
