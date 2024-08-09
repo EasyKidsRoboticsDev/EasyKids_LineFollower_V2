@@ -1,4 +1,5 @@
-#include <EasyKids_LineFollower.h>
+#include <EasyKids_LineFollower_V2.h>  /* Select robot version */
+// #include <EasyKids_LineFollower.h>
 
 /*
 <<<<< Command >>>>>
@@ -44,10 +45,10 @@ void loop() {
   delay(2000); // delay to start EDF
   
   // ------ Start Robot -------
-  lineTimer(20, 100, 20, 10, 3000); 
-  lineCross(30, 100, 20, 10); 
+  lineTimer(20, 100, 2, 0.00001, 1, 3000); 
+  lineCross(30, 100, 2, 0.00001, 1); 
   lineTurnRight(30); 
-  line90Left(30, 100, 20, 10); 
+  line90Left(30, 100, 2, 0.00001, 1); 
 
   // Stop EDF Controller
   edfStop();

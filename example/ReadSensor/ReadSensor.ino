@@ -1,8 +1,8 @@
-#include <EasyKids_LineFollower.h>
+#include <EasyKids_LineFollower_V2.h>  /* Select robot version */
+// #include <EasyKids_LineFollower.h>
 
 void setup() {
   lineFollowerSetup();
-  sensorNum(11);
   
   // --- Choose Line Type --------
   blackLine();
