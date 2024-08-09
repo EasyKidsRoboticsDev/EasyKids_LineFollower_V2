@@ -341,31 +341,6 @@ void lineCross(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD) // 00
   Motor_R(0);
 }
 
-void lineFork(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD) //  00010001000
-{
-  if (invertedLine)
-  {
-    while (!digitalRead(sensorArr[3]) || !digitalRead(sensorArr[7]))
-    {
-      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
-    }
-  }
-  else
-  {
-    while (digitalRead(sensorArr[3]) || digitalRead(sensorArr[7]))
-    {
-      pidLine(MED_SPEED, MAX_SPEED, KP, KI, KD);
-    }
-  }
-
-  Motor_L(MED_SPEED);
-  Motor_R(MED_SPEED);
-  delay(map(MED_SPEED, 0, 100, 100, 0));
-
-  Motor_L(0);
-  Motor_R(0);
-}
-
 void line90Left(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD) // 00100100000
 {
   if (invertedLine)
