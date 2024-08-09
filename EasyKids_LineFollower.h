@@ -242,6 +242,9 @@ int readError()
 
 void pidLine(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD)
 {
+  KP *= 10;
+  KI *= 10;
+  KD *= 10;
 
   int speed_1 = 0;
   int speed_2 = 0;
