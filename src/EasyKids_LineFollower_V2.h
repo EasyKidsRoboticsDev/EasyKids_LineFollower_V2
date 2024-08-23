@@ -7,7 +7,7 @@
 #error "Cannot use both versions at the same time. Please select only one version"
 #endif
 
-#include <Adafruit_GFX.h>
+#include "includes/Adafruit_GFX_Library/Adafruit_GFX.h"
 #include "includes/Adafruit_SSD1306/Adafruit_SSD1306.h"
 #include "includes/ServoTimer2/ServoTimer2.h"
 
