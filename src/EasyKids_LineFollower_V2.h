@@ -39,7 +39,7 @@ int previous_error = 0;
 int error_sum = 0;
 
 Adafruit_SSD1306 display(OLED_RESET);
-// ServoTimer2 EDF;
+ServoTimer2 EDF;
 
 /// Function to set speed of left motor ///
 void Motor_L(int speed)
@@ -91,21 +91,21 @@ void Motor_R(int speed)
   }
 }
 
-// void edfSetup()
-// {
-//   EDF.attach(EDF_PIN);               // Brushless attach
-//   EDF.write(1000);                   // 1000-2500 maxspeed for Brushless
-// }
+void edfSetup()
+{
+  EDF.attach(EDF_PIN);               // Brushless attach
+  EDF.write(1000);                   // 1000-2500 maxspeed for Brushless
+}
 
-// void edfSpeed(int speed)
-// {
-//   EDF.write(map(speed, 0, 100, 1000, 2500)); // Map speed for Brushless
-// }
+void edfSpeed(int speed)
+{
+  EDF.write(map(speed, 0, 100, 1000, 2500)); // Map speed for Brushless
+}
 
-// void edfStop()
-// {
-//   EDF.write(1000); // Stop Brushless
-// }
+void edfStop()
+{
+  EDF.write(1000); // Stop Brushless
+}
 
 void waitForStart()
 {
