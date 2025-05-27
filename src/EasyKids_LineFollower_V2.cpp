@@ -183,9 +183,9 @@ void readSensor() {
   }
 }
 
-static int readError()
+static float readError()
 {
-  static lastPosition = 0;
+  static float lastPosition = 0;
 
   bool sensorVal[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   bool onLine = 0;
@@ -207,22 +207,23 @@ static int readError()
   }
   error /= activated;
   lastPosition = error;
-  return lastPosition;
+  return error;
 }
 
 void pidLine(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD)
 { 
   static const int setpoint = 5;
 
-  static int error_loop_count = 0;
-  static int previous_error = 0;
+  static float error_sum = 0;
+  static float previous_error = 0;
   
   // Upscaling the coefficient values
-  KP *= 10;
-  KI *= 10;
-  KD *= 10;
+  // KP *= 10;
+  // KI *= 10;
+  // KD *= 10;
 
-  int current_error = readError() - setpoint;
+  float current_error = readError() - setpoint;
+  // Serial.println(current_error);
   int output = (KP * current_error) + (KI * error_sum) + (KD * (current_error - previous_error));
 
   previous_error = current_error;
@@ -235,7 +236,6 @@ void pidLine(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD)
 
   Motor_L(MED_SPEED + output);
   Motor_R(MED_SPEED - output);
-
 }
 
 void lineTimer(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD, long timer)
