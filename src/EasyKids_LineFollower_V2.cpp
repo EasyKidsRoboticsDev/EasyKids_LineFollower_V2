@@ -185,114 +185,56 @@ void readSensor() {
 
 static int readError()
 {
+  static lastPosition = 0;
+
   bool sensorVal[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   bool onLine = 0;
-  int error = 0;
-  for (short int i = 0; i < 11; i++) 
+  for(short int i = 0; i < 11; i++) 
   {
     sensorVal[i] = invertedLine ? digitalRead(sensorArr[i]) : !digitalRead(sensorArr[i]);
     onLine |= sensorVal[i];
   }
+  
+  if (!onLine) return lastPosition;
 
-  if (!onLine)
+  float error = 0;
+  int activated = 0;
+  for(short int i = 0; i < 11; i++) 
   {
-    return OUT_LINE;
+    if(!sensorVal[i]) continue;
+    error += i;
+    activated++;
   }
-  
-  /* Negative left sensor */
-  error = sensorVal[4]                   ? -2 : error; // b1
-  error = sensorVal[3]                   ? -4 : error; // b3
-  error = sensorVal[2]                   ? -6 : error; // b5
-  error = sensorVal[1]                   ? -8 : error; // b7
-  error = sensorVal[0]                   ? -10 : error; // b9
-  error = sensorVal[4] && sensorVal[3]   ? -3 : error; // b1 && b3
-  error = sensorVal[3] && sensorVal[2]   ? -5 : error; // b3 && b5
-  error = sensorVal[2] && sensorVal[1]   ? -7 : error; // b5 && b7
-  error = sensorVal[1] && sensorVal[0]   ? -9 : error; // b7 && b9
-  
-  
-  /* Positive right sensor */
-  error = sensorVal[6]                   ? 2 : error; // b2
-  error = sensorVal[7]                   ? 4 : error; // b4 
-  error = sensorVal[8]                   ? 6 : error; // b6 
-  error = sensorVal[9]                   ? 8 : error; // b8
-  error = sensorVal[10]                  ? 10 : error; // b10
-  error = sensorVal[6] && sensorVal[7]   ? 3 : error; // b2 && b4
-  error = sensorVal[7] && sensorVal[8]   ? 5 : error; // b4 && b6
-  error = sensorVal[8] && sensorVal[9]   ? 7 : error; // b6 && b8
-  error = sensorVal[9] && sensorVal[10]  ? 9 : error; // b8 && b10
-  
-  
-  /* Neutral middle sensor */
-  error = sensorVal[5]                   ? 0 : error; // b0
-  error = sensorVal[5] && sensorVal[4]   ? -1 : error; // b0 && b1
-  error = sensorVal[5] && sensorVal[6]   ? 1 : error; // b0 && b2
-  
-  out_state = (error <= 4) && (error >= -4)   ? CENTER : out_state; 
-  out_state = (error >= 5) && (error <= 10)   ? LEFT : out_state;
-  out_state = (error <= -5) && (error >= -10) ? RIGHT: out_state;
-
-  return error;
+  error /= activated;
+  lastPosition = error;
+  return lastPosition;
 }
 
 void pidLine(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD)
-{
+{ 
+  static const int setpoint = 5;
+
   static int error_loop_count = 0;
   static int previous_error = 0;
-  static int error_sum = 0;
   
-  int speed_1 = 0;
-  int speed_2 = 0;
-
   // Upscaling the coefficient values
   KP *= 10;
   KI *= 10;
   KD *= 10;
 
-  int current_error = readError();
-  if (current_error == OUT_LINE)
+  int current_error = readError() - setpoint;
+  int output = (KP * current_error) + (KI * error_sum) + (KD * (current_error - previous_error));
+
+  previous_error = current_error;
+  error_sum += current_error;
+
+  if (current_error == 0)
   {
-    switch (out_state)
-    {
-      case CENTER:
-        speed_1 = MED_SPEED;
-        speed_2 = MED_SPEED;
-        break;
-      case LEFT:
-        speed_1 = MAX_SPEED;
-        speed_2 =  -MAX_SPEED;
-        break;
-      case RIGHT:
-        speed_1 = -MAX_SPEED;
-        speed_2 = MAX_SPEED;
-        break;
-      default:
-        break;
-    }
-  }
-  else
-  {
-    int output = (KP * current_error) + (KI * error_sum) + (KD * (current_error - previous_error));
-
-    error_loop_count++;
-    if (error_loop_count > 350)
-    {
-      error_loop_count = 0;
-      previous_error = current_error;
-      error_sum += current_error;
-    }
-
-    if (current_error == 0)
-    {
-      error_sum = 0;
-    }
-
-    speed_1 = MED_SPEED + output;
-    speed_2 = MED_SPEED - output;
+    error_sum = 0;
   }
 
-  Motor_L(speed_1);
-  Motor_R(speed_2);
+  Motor_L(MED_SPEED + output);
+  Motor_R(MED_SPEED - output);
 
 }
 
