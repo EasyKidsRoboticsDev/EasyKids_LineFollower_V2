@@ -15,16 +15,14 @@ static const int START_SW = A6;
 static const int OLED_RESET = -1;
 
 static const int OUT_LINE = 16;
-
-static enum OutState 
+static enum OutState
 {
   CENTER,
   RIGHT,
   LEFT
 } out_state = CENTER;
 
-static const int sensorArr[11] = { 17, 16, 15, 14, 13, 12, 11, 8, 7, 4, 2 };
-static const int cellSize = 128 / 11;
+static const int sensorArr[11] = {17, 16, 15, 14, 13, 12, 11, 8, 7, 4, 2};
 static bool invertedLine = false;
 
 static Adafruit_SSD1306 display(OLED_RESET);
@@ -146,6 +144,8 @@ void whiteLine()
 }
 
 void readSensor() {
+  static const int cellSize = 128 / 11;
+
   bool sensorVal = 0;
   int xPos = 0;
   while (1) 
@@ -185,57 +185,79 @@ void readSensor() {
 
 static float readError()
 {
-  static float lastPosition = 0;
+  static const int weights[11] = {-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10};
 
-  bool sensorVal[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-  bool onLine = 0;
+  bool onLine = false;
+  int error_sum = 0;
+  int count = 0;
   for(short int i = 0; i < 11; i++) 
   {
-    sensorVal[i] = invertedLine ? digitalRead(sensorArr[i]) : !digitalRead(sensorArr[i]);
-    onLine |= sensorVal[i];
+    bool sensorVal = invertedLine ? digitalRead(sensorArr[i]) : !digitalRead(sensorArr[i]);
+    if(sensorVal)
+    {
+      onLine = true;
+      error_sum += weights[i];
+      ++count;
+    }
   }
-  
-  if (!onLine) return lastPosition;
+  if (!onLine) return OUT_LINE;
 
-  float error = 0;
-  int activated = 0;
-  for(short int i = 0; i < 11; i++) 
-  {
-    if(!sensorVal[i]) continue;
-    error += i;
-    activated++;
-  }
-  error /= activated;
-  lastPosition = error;
+  int error = error_sum / count;
+  if(error > 4) out_state = LEFT;
+  else if(error < -4) out_state = RIGHT;
+  else out_state = CENTER;
+
   return error;
 }
 
 void pidLine(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD)
 { 
-  static const int setpoint = 5;
+  static int previous_error = 0;
+  static int error_sum = 0;
+  static int loop_count = 0;
 
-  static float error_sum = 0;
-  static float previous_error = 0;
-  
-  // Upscaling the coefficient values
-  // KP *= 10;
-  // KI *= 10;
-  // KD *= 10;
+  int speed_1 = 0;
+  int speed_2 = 0;
 
-  float current_error = readError() - setpoint;
+  float current_error = readError();
   // Serial.println(current_error);
-  int output = (KP * current_error) + (KI * error_sum) + (KD * (current_error - previous_error));
-
-  previous_error = current_error;
-  error_sum += current_error;
-
-  if (current_error == 0)
+  if(current_error == OUT_LINE)
   {
-    error_sum = 0;
+    switch (out_state)
+    {
+      case CENTER:
+        speed_1 = MED_SPEED;
+        speed_2 = MED_SPEED;
+        break;
+      case LEFT:
+        speed_1 = MAX_SPEED;
+        speed_2 = -MAX_SPEED;
+        break;
+      case RIGHT:
+        speed_1 = -MAX_SPEED;
+        speed_2 = MAX_SPEED;
+        break;
+    }
+  }
+  else
+  {
+    int output = (KP * current_error) + (KI * error_sum) + (KD * (current_error - previous_error));
+
+    ++loop_count;
+    if(loop_count > 350)
+    {
+      previous_error = current_error;
+      error_sum += current_error;
+      loop_count = 0;
+    }
+    error_sum = (current_error == 0) ? 0 : error_sum;
+
+    speed_1 = MED_SPEED + output;
+    speed_2 = MED_SPEED + output;
   }
 
-  Motor_L(MED_SPEED + output);
-  Motor_R(MED_SPEED - output);
+  Motor_L(speed_1);
+  Motor_R(speed_2);
 }
 
 void lineTimer(int MED_SPEED, int MAX_SPEED, float KP, float KI, float KD, long timer)
